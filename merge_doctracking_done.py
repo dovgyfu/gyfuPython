@@ -167,7 +167,7 @@ fullDone = fullDocStatus[fullDocStatus['done_count'] == 1]
 cleanDocReport = pd.read_csv(pandaData + "gw_doctracking.csv", dtype={'MRN': 'object', 'DocType': 'object'})
 cleanDocReport['DocModDTTM'] = cleanDocReport.docModDate.map(valDate2)
 docStatus = fullDocStatus[['DocID', 'DocType_x', 'MRN', 'DocModDTTM',
-                           'DocCategory_x', 'SignCount', 'done_count'
+                           'DocCategory_x',  'done_count'
                            ]]
 docStatus = docStatus.rename(columns={'DocType_x': 'DocType', 'DocCategory_x': 'DocCategory'})
 docStatus = docStatus[docStatus['DocCategory'] == "Clinical"]
@@ -181,6 +181,32 @@ cdtdf = cdtdf.reset_index().rename(columns={'DocType': 'Freq'})
 cdtdf = cdtdf.rename(columns={'index': 'DocType'})
 
 cdtdf = cdtdf.sort_values('DocType')
+
+docStatus.DocType = docStatus.DocType.fillna("aaaaNoDocType")
+docStatus['DocType'] = docStatus.DocType.map(cleanType)
+
+dst = docStatus['DocType'].value_counts()
+dstdf = pd.DataFrame(dst)
+dstdf = dstdf.reset_index().rename(columns={'DocType': 'Freq'})
+dstdf = dstdf.rename(columns={'index': 'DocType'})
+
+dstdf = dstdf.sort_values('DocType')
+
+totdtyp = dstdf['Freq'].sum()
+totctyp = cdtdf['Freq'].sum()
+print ("totdtyp=" + str(totdtyp))
+print ("totctyp=" + str(totctyp))
+cdr = cleanDocReport[['MRN', 'DocType', 'DocModDTTM']]
+cdr['report_count'] = 1
+sumDocStatus = docStatus.groupby(['MRN', 'DocType', 'DocModDTTM']).sum().reset_index()
+sumDocReport = cdr.groupby(['MRN', 'DocType', 'DocModDTTM']).sum().reset_index()
+D7353 =sumDocReport[sumDocReport['MRN'] == '7353'].sort_values(['MRN', 'DocType', 'DocModDTTM'])
+S7353 =sumDocStatus[sumDocStatus['MRN'] == '7353'].sort_values(['MRN', 'DocType', 'DocModDTTM'])
+
+srtD7353 = D7353.sort_values(['MRN', 'DocType', 'DocModDTTM'])
+srtS7353 = S7353.sort_values(['MRN', 'DocType', 'DocModDTTM'])
+
+compData  = pd.merge(sumDocReport, sumDocStatus, how='outer', on=['MRN', 'DocType', 'DocModDTTM'])
 '''
 del allLog
 del dupDocID

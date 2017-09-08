@@ -217,7 +217,7 @@ def parse_MRN(patient):
 listDir = r'y:\MHNI_Data\DocTracking\\' 
 pandawork = r'y:\Pandas_Work\\'
 pandadata = r'y:\Pandas_Data\\'
-'''
+
 #cleanDocReport = pd.read_csv(pandadata + "gw_doctracking.csv")
 cleanDocReport = pd.DataFrame()
 rawDocReport = walk_doc_lists(listDir)
@@ -227,8 +227,6 @@ cleanDocReport1['MRN'] = cleanDocReport1[1].map(parse_MRN)
 
 cleanDocReport = cleanDocReport.append(cleanDocReport1)
 
-cleanDocReport.to_csv(pandadata + "gw_doctracking.csv",index=False)
-'''
 cleanDocReport = cleanDocReport.rename(columns={0: 'docModDate',
                                1: 'patientName',
                                2: 'DocType'})

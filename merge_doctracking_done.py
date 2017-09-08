@@ -157,20 +157,30 @@ def scanDocs():
     print('Total Admin Docs=' + str(total_admin))
     
     doneDocList.to_csv(dataDir + "doneDocList.csv", index=False)
-    
+def cleanType(doctype):
+    return doctype.strip()
 
 fullDocStatus = pd.read_csv(pandaData + "FullDocStatusNoDup_new3.csv", dtype={'MRN': 'object',
                                                                               'DocID': 'object'})
 fullDocStatus['DocModDTTM'] = fullDocStatus.DocModDate.map(valDate2)
 fullDone = fullDocStatus[fullDocStatus['done_count'] == 1]
-cleanDocReport = pd.read_csv(pandaData + "gw_doctracking.csv", dtype={'MRN': 'object'})
+cleanDocReport = pd.read_csv(pandaData + "gw_doctracking.csv", dtype={'MRN': 'object', 'DocType': 'object'})
 cleanDocReport['DocModDTTM'] = cleanDocReport.docModDate.map(valDate2)
-docStatus = fullDocStatus[['DocID', 'DocType_x', 'MRN', 'docModDTTM',
+docStatus = fullDocStatus[['DocID', 'DocType_x', 'MRN', 'DocModDTTM',
                            'DocCategory_x', 'SignCount', 'done_count'
                            ]]
 docStatus = docStatus.rename(columns={'DocType_x': 'DocType', 'DocCategory_x': 'DocCategory'})
 docStatus = docStatus[docStatus['DocCategory'] == "Clinical"]
+#docStatus['DocType'] = docStatus.DocType.map(cleanType)
+cleanDocReport = cleanDocReport.fillna("")
+cleanDocReport['DocType'] = cleanDocReport.DocType.map(cleanType)
 
+cdt =cleanDocReport['DocType'].value_counts()
+cdtdf = pd.DataFrame(cdt)
+cdtdf = cdtdf.reset_index().rename(columns={'DocType': 'Freq'})
+cdtdf = cdtdf.rename(columns={'index': 'DocType'})
+
+cdtdf = cdtdf.sort_values('DocType')
 '''
 del allLog
 del dupDocID

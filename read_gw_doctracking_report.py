@@ -84,6 +84,8 @@ def walk_doc_lists(directory_path):
         for filename in filenames:
            file_path   = root + '\\' + filename
 #           print(filename)
+#           if (filename.startswith("gw_doctracking_2017_090717")  and filename.endswith(".xls")):
+
            if (filename.startswith("gw")  and filename.endswith(".xls")):
                    print("reading: " + file_path)
                    df1 = pd.read_excel(file_path, sheetname='Sheet1', header=None, index=False)
@@ -215,9 +217,23 @@ def parse_MRN(patient):
 listDir = r'y:\MHNI_Data\DocTracking\\' 
 pandawork = r'y:\Pandas_Work\\'
 pandadata = r'y:\Pandas_Data\\'
-
+'''
+#cleanDocReport = pd.read_csv(pandadata + "gw_doctracking.csv")
+cleanDocReport = pd.DataFrame()
 rawDocReport = walk_doc_lists(listDir)
-cleanDocReport = process_raw_report(rawDocReport)
+print("Process Raw Report:")
+cleanDocReport1 = process_raw_report(rawDocReport)
+cleanDocReport1['MRN'] = cleanDocReport1[1].map(parse_MRN)
 
-cleanDocReport['MRN'] = cleanDocReport[1].map(parse_MRN)
+cleanDocReport = cleanDocReport.append(cleanDocReport1)
+
 cleanDocReport.to_csv(pandadata + "gw_doctracking.csv",index=False)
+'''
+cleanDocReport = cleanDocReport.rename(columns={0: 'docModDate',
+                               1: 'patientName',
+                               2: 'DocType'})
+
+cleanDocReport.to_csv(pandadata + "gw_doctracking.csv",index=False)
+
+
+

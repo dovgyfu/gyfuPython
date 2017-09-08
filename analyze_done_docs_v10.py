@@ -103,47 +103,63 @@ def cleanDocID(DocID):
     else:
         return DocID
 
+def scanDocs():    
+    print("===== Scanning the Documents Directory")
+    dataDir = r'y:\Pandas_Data\\'
+    docDir = r'x:\Documents'
+    fnameDocs = dataDir +  r'\00_Done_Docs.csv'
+    walk_files(docDir, fnameDocs)
     
-print("===== Scanning the Documents Directory")
-dataDir = r'y:\Pandas_Data\\'
-docDir = r'x:\Documents'
-fnameDocs = dataDir +  r'\00_Done_Docs.csv'
-walk_files(docDir, fnameDocs)
+    print("Reading CSV of Doc List")
+    df = pd.read_csv(fnameDocs)
+    df  = df [(df['ftype'] == 'GOOD') & (df['dup'] == "NODUP" ) ]
+    numwDups = len(df)
+    df = df.drop_duplicates(['DocID', 'MRN', 'DocDate', 'DocType'])
+    numNDups = len(df)
+    
+    doneDocList = df
+    #doneDocList['MRN'] = doneDocList.MRN.str[1:]
+    #doneDocList['DocID'] = doneDocList.DocID.str[1:]
+    doneDocList['done_count'] = 1
+    doneDocList['done_admin_count'] = doneDocList['ExtID'].map(countAdmin)
+    doneDocList['done_clinical_count'] = doneDocList['ExtID'].map(countClinical)
+    doneDocList['DocCategory'] = doneDocList.ExtID.map(docCategory)
+    doneDocList.drop(['ExtID', 'ftype', 'dup'], axis=1, inplace=True)
+    #doneDocList = doneDocList[(doneDocList['admin_count'] == 1) | (doneDocList['clinical_count'] == 1)]
+    total_clinical = doneDocList['done_clinical_count'].sum()
+    total_admin = doneDocList['done_admin_count'].sum()
+    total_done = doneDocList['done_count'].sum()
+    
+    #doneDocList.loc['Total'] = pd.Series(doneDocList['done_clinical_count'].sum(), index=['admin_count'])
+    #doneDocList.loc['Total'] = pd.Series(doneDocList['done_count'].sum(), index=['admin_count'])
+    #doneDocList.loc['Total'] = pd.Series(doneDocList['done_admin_count'].sum(),
+    #               index=['admin_count'])
+    
+    print('Total  Docs=' + str(total_done))
+    print('Total Clinical Docs=' + str(total_clinical))
+    print('Total Admin Docs=' + str(total_admin))
+    
+    doneDocList.to_csv(dataDir + "doneDocList.csv", index=False)
+    
 
-print("Reading CSV of Doc List")
-df = pd.read_csv(fnameDocs)
-df  = df [(df['ftype'] == 'GOOD') & (df['dup'] == "NODUP" ) ]
-numwDups = len(df)
-df = df.drop_duplicates(['DocID', 'MRN', 'DocDate', 'DocType'])
-numNDups = len(df)
-
-doneDocList = df
-#doneDocList['MRN'] = doneDocList.MRN.str[1:]
-#doneDocList['DocID'] = doneDocList.DocID.str[1:]
-doneDocList['done_count'] = 1
-doneDocList['done_admin_count'] = doneDocList['ExtID'].map(countAdmin)
-doneDocList['done_clinical_count'] = doneDocList['ExtID'].map(countClinical)
-doneDocList['DocCategory'] = doneDocList.ExtID.map(docCategory)
-doneDocList.drop(['ExtID', 'ftype', 'dup'], axis=1, inplace=True)
-#doneDocList = doneDocList[(doneDocList['admin_count'] == 1) | (doneDocList['clinical_count'] == 1)]
-total_clinical = doneDocList['done_clinical_count'].sum()
-total_admin = doneDocList['done_admin_count'].sum()
-total_done = doneDocList['done_count'].sum()
-
-#doneDocList.loc['Total'] = pd.Series(doneDocList['done_clinical_count'].sum(), index=['admin_count'])
-#doneDocList.loc['Total'] = pd.Series(doneDocList['done_count'].sum(), index=['admin_count'])
-#doneDocList.loc['Total'] = pd.Series(doneDocList['done_admin_count'].sum(),
-#               index=['admin_count'])
-
-print('Total  Docs=' + str(total_done))
-print('Total Clinical Docs=' + str(total_clinical))
-print('Total Admin Docs=' + str(total_admin))
-
-doneDocList.to_csv(dataDir + "doneDocList.csv", index=False)
+scanDocs()
 
 doneDocList = pd.read_csv(pandaData + "doneDocList.csv", dtype={'DocID': 'str'})
 doneDocList['DocID'] = doneDocList.DocID.map(cleanDocID)
 doneDocList['MRN'] = doneDocList.MRN.map(cleanDocID)
+donedup = doneDocList[['MRN', 'DocID', 'done_count']].groupby(['MRN', 'DocID']).sum().reset_index()
+donedup = donedup[donedup['done_count'] > 1]
+donedup['inDoneDup'] = 1
+donedup = donedup.rename(columns={'done_count': 'dup_count'})
+donedupFIle = doneDocList[['MRN', 'DocID', 'File', 'done_count']].groupby(['File']).sum().reset_index()
+doneAll = pd.merge(doneDocList, donedup, how='outer', on='DocID').fillna(0)
+doneNoDup = doneAll[doneAll['inDoneDup'] == 0]
+doneNoDup = doneNoDup.rename(columns={'MRN_x': 'MRN'})
+doneNoDup['d_count'] = 1
+totDoneNoDup = doneNoDup['d_count'].sum()
+print("Total Done Docs NoDup=" + str(totDoneNoDup))
+doneDup = doneAll[doneAll['inDoneDup'] == 1]
+doneDup.to_csv(pandaData + "doneDuplicates.csv", index=False)
 
 ###################################################################################
 #
@@ -155,8 +171,8 @@ adminLog = pd.read_csv(pandaData + "all_admin_docs.csv", skiprows=1, header=None
                                                                 'Robot',
                                                                 'MRN', 'DocCreateDate', 'DocType',
                                                                 'DocID'],
-                                                            dtype={'MRN': 'str',
-                                                                   'DocID': 'str'})
+                                                                dtype={'MRN': 'str',
+                                                                'DocID': 'str'})
 adminLog['DocCategory'] = 'Admin'
 adminLog['fdlCount'] = 1
 adminLog['Signed'] = 'Signed'
@@ -164,12 +180,28 @@ adminLog['SignCount'] = 1
 
 
 adminLog['docCreateDTTM'] = adminLog.DocCreateDate.map(valDate) 
-fullDocLog = pd.read_csv(pandaData + "fullDocLog.csv", dtype={'DocID': 'str', 'MRN': 'str'})
-fullDocLog = pd.concat([fullDocLog, adminLog])
-del adminLog
+fullDocLog1 = pd.read_csv(pandaData + "fullDocLog.csv", dtype={'MRN': 'object', 'DocID': 'object'})
+fullDocLog = pd.concat([fullDocLog1, adminLog])
+tmpfdl = fullDocLog[['MRN', 'DocID', 'fdlCount']]
+tmpfdl['fdlCount'] = 1
+sumfdl  = tmpfdl.groupby(['MRN', 'DocID']).sum()
+fdl_nodup = fullDocLog.drop_duplicates(subset=['MRN', 'DocID'])
+totwdups = len(fullDocLog)
+totndups = len(fdl_nodup)
+totDups = totwdups - totndups
+print("Total Dups=" + str(totDups))
 
-fullDocStatus = pd.merge(fullDocLog, doneDocList, how='left', on=['DocID', 'MRN'])
-fullDocStatus.to_csv(pandaData + "FullDocStatus.csv", index=False)
+
+
+fullDocStatus = pd.merge(fdl_nodup, doneNoDup, how='outer', on=['DocID', 'MRN']).fillna(0)
+extradocs = fullDocStatus[fullDocStatus['fdlCount'] == 0]
+extradocs.to_csv(pandaData + "extradocs.csv", index=False)
+fullDocStatus.drop(['Robot'], axis=1, inplace=True)
+
+fullDocStatus.to_csv(pandaData + "FullDocStatusNoDup_new3.csv", index=False)
+
+fullDone = fullDocStatus[fullDocStatus['done_count'] == 1]
+
 '''
 del allLog
 del dupDocID

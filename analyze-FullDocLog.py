@@ -57,8 +57,8 @@ fullDocLog['Signed'] = fullDocLog.DocSize.map(mapSize)
 fullDocLog['SignCount'] = fullDocLog.Signed.map(mapSign)
 fullDocLog['fdlCount'] = 1
 fullDocLog['DocCategory'] = 'Clinical'
-fullDocLog.to_csv(pandaData + "fullDocLog.csv")
-del allLog
+fullDocLog.to_csv(pandaData + "fullDocLog.csv", index=False)
+#del allLog
 '''
 srtFDL = fullDocLog.sort_values(['MRN', 'DocID'])[['MRN', 'DocID']]
 srtFDL['count'] = 1

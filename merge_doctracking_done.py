@@ -198,42 +198,24 @@ print ("totdtyp=" + str(totdtyp))
 print ("totctyp=" + str(totctyp))
 cdr = cleanDocReport[['MRN', 'DocType', 'DocModDTTM']]
 cdr['report_count'] = 1
-sumDocStatus = docStatus.groupby(['MRN', 'DocType', 'DocModDTTM']).sum().reset_index()
-sumDocReport = cdr.groupby(['MRN', 'DocType', 'DocModDTTM']).sum().reset_index()
+sumDocStatus = docStatus.groupby(['MRN', 'DocType']).sum().reset_index()
+sumDocReport = cdr.groupby(['MRN', 'DocType']).sum().reset_index()
+'''
 D7353 =sumDocReport[sumDocReport['MRN'] == '7353'].sort_values(['MRN', 'DocType', 'DocModDTTM'])
 S7353 =sumDocStatus[sumDocStatus['MRN'] == '7353'].sort_values(['MRN', 'DocType', 'DocModDTTM'])
 
 srtD7353 = D7353.sort_values(['MRN', 'DocType', 'DocModDTTM'])
 srtS7353 = S7353.sort_values(['MRN', 'DocType', 'DocModDTTM'])
-
-compData  = pd.merge(sumDocReport, sumDocStatus, how='outer', on=['MRN', 'DocType', 'DocModDTTM'])
 '''
-del allLog
-del dupDocID
-del fdl
-del tsum
+compData  = pd.merge(sumDocReport, sumDocStatus, how='outer', on=['MRN', 'DocType'])
+compData['delta'] = compData['report_count'] - compData['done_count']
+totDelta = compData['delta'].sum()
 
-tgrp = allLog.groupby('MRN')
-byMRN = tgrp.count()
-byMRN = byMRN.reset_index()[['MRN', 0]]
-totMRN = mrnlist
-totMRN['tot_count'] = 1
-totMRN['MRN'] = totMRN['MRN'].astype('str')
-totMRN = totMRN.drop_duplicates(subset='MRN')
-haveMRN = byMRN
-haveMRN['have_count'] = 1
-haveMRN = haveMRN.drop_duplicates(subset='MRN')
-haveMRN['MRN'] = haveMRN['MRN'].astype('str')
-mrncomp = pd.merge(totMRN, haveMRN, how='outer', on='MRN')
-mrncomp = mrncomp.fillna(0)[['MRN', 'tot_count', 'have_count']].reset_index()
+sumMRN = compData.groupby(['MRN']).sum()
+print("----------------------------- Total Delta=" + str(int(totDelta)))
+sumDone = sumMRN['done_count'].sum()
+sumReport = sumMRN['report_count'].sum()
+sumDelta = sumMRN['delta'].sum()
 
-print ("With DUps=" + str(numwDups) + " NumNDups=" + str(numNDups))
-
-fileCount = df.groupby(['MRN']).count()['DocDate'].to_frame().rename(columns={'DocDate':'Count'})
-fileCount = fileCount.reset_index()
-doneMRN = fileCount
-doneMRN.to_excel(dataDir + "ROBOTX_chart_cfg.xlsx", index=False)
-totFiles = fileCount['Count'].sum()
-print("Total Files Extracted: " + str(totFiles))
-print("Total Files Extracted: " + str(totFiles))
-'''
+totals = [sumDone, sumReport, sumDelta]
+t = pd.DataFrame(totals)

@@ -160,6 +160,7 @@ def scanDocs():
 def cleanType(doctype):
     return doctype.strip()
 
+
 fullDocStatus = pd.read_csv(pandaData + "FullDocStatusNoDup_new3.csv", dtype={'MRN': 'object',
                                                                               'DocID': 'object'})
 fullDocStatus['DocModDTTM'] = fullDocStatus.DocModDate.map(valDate2)

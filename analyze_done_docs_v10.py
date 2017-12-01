@@ -198,7 +198,7 @@ extradocs = fullDocStatus[fullDocStatus['fdlCount'] == 0]
 extradocs.to_csv(pandaData + "extradocs.csv", index=False)
 fullDocStatus.drop(['Robot'], axis=1, inplace=True)
 
-fullDocStatus.to_csv(pandaData + "FullDocStatusNoDup_new3.csv", index=False)
+fullDocStatus.to_csv(pandaData + "FullDocStatusNoDup_new4.csv", index=False)
 
 fullDone = fullDocStatus[fullDocStatus['done_count'] == 1]
 

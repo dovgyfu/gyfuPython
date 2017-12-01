@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# version 4 
-# version 5
+
 import csv
 import re
 from datetime import datetime
@@ -156,26 +155,23 @@ def getCleanDocList(docReport):
 def write_cfg(robot, list):
     global pandasData
     if len(list) > 0:
-        xlFile =  pandasData + robot + "_cfg.xlsx"
+        xlFile =  pandasData + robot + "_docSelcfg.xlsx"
         print(xlFile)
         df = pd.DataFrame(list)
 #        df.to_excel(xlFile, sheet_name="chart_list", header=False)
         status= [["LastRow", -1, 0]]
         st = pd.DataFrame(status)
         xlwtr = pd.ExcelWriter(xlFile, engine='xlsxwriter')
-        df.to_excel(xlwtr, sheet_name="chart_list", header=False,index=False)
+        df.to_excel(xlwtr, sheet_name="doc_list", header=False,index=False)
 
         st.to_excel(xlwtr, sheet_name='status',header=False,index=False)
         xlwtr.save()
         xlwtr.close()
-
-
-patientList = pd.read_csv(pandasData + 'Patient_Demographics.csv', dtype=object)    
         
-#patientList = pd.read_csv(pandasData + 'mrn_todo.csv')
+docList = pd.read_excel(pandasData + 'ROBOTX_docSel.xlsx', header=None)
 #chartList = patientList[patientList['patientSex'] != 'Unknown']
-chartList = patientList.dropna(subset=['MRN'])
-chartList = chartList['MRN']
+
+#chartList = chartList['MRN']
 rList =  ['ROBOT0', 'ROBOT1', 'ROBOT2',
               'ROBOT3',
               'ROBOT4',
@@ -183,16 +179,17 @@ rList =  ['ROBOT0', 'ROBOT1', 'ROBOT2',
               'ROBOT7',
               'ROBOT8']
 rIter = iter(rList)
-numCharts = len(chartList)
-print(numCharts)
-chartsPerRobot = int(numCharts / 8)
+numDocs = len(docList)
+print(numDocs)
+docsPerRobot = int(numDocs / 8)
 cfgdf = []
 i = 1
 y = 1
 
-for chart in chartList:
-#    print(i)
-    if i > chartsPerRobot or y >= numCharts-1:
+for doc in docList.index:
+    row = docList.iloc[[doc]]
+
+    if i > docsPerRobot or y >= numDocs-1:
         i = 1
         try:
             robot = next(rIter)
@@ -201,9 +198,10 @@ for chart in chartList:
             cfgdf = []
         except:
             print (i)
-    cfgdf = cfgdf + [[str(chart), "NOT"]]
+    rowList = row.values.tolist()       
+    cfgdf = cfgdf + rowList
     i = i + 1
     y = y + 1 
-
+    
        
 
